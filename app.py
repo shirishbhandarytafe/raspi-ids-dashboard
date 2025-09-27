@@ -1,38 +1,33 @@
 from flask import Flask, render_template
-from azure.storage.blob import BlobServiceClient
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient, ContainerClient
 import pandas as pd
 from io import BytesIO
-import os
 
 app = Flask(__name__)
 
 # ================= CONFIG =================
-CONN_STR = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
+STORAGE_ACCOUNT_URL = "https://idslogsstore123.blob.core.windows.net/idslogs"
 CONTAINER = "idslogs"
 
-if CONN_STR:
-    try:
-        blob_service_client = BlobServiceClient.from_connection_string(CONN_STR)
-        container_client = blob_service_client.get_container_client(CONTAINER)
-        blob_available = True
-    except Exception as e:
-        print(f"Error initializing BlobServiceClient: {e}")
-        blob_available = False
-else:
-    print("AZURE_STORAGE_CONNECTION_STRING not set")
-    blob_available = False
+# Use Managed Identity for authentication
+credential = DefaultAzureCredential()
+blob_service_client = BlobServiceClient(account_url=STORAGE_ACCOUNT_URL, credential=credential)
+container_client = blob_service_client.get_container_client(CONTAINER)
 # =========================================
 
 def read_last_logs(n=10):
     """Fetch the last n CSV logs from Azure Blob Storage"""
-    if not blob_available:
+    try:
+        blobs = list(container_client.list_blobs())
+    except Exception as e:
+        print(f"Error accessing container: {e}")
         return []
 
-    blobs = list(container_client.list_blobs())
     if not blobs:
         return []
 
-    # Sort blobs by last modified date descending
+    # Sort by last modified descending
     blobs.sort(key=lambda b: b.last_modified, reverse=True)
     last_blobs = blobs[:n]
 
@@ -57,8 +52,13 @@ def index():
 
 @app.route("/env")
 def test_env():
-    """Test route to confirm connection string availability"""
-    return CONN_STR or "Connection string not set"
+    """Test route to confirm Managed Identity is working"""
+    try:
+        # Test listing blobs
+        _ = list(container_client.list_blobs())
+        return "Managed Identity access working!"
+    except Exception as e:
+        return f"Access failed: {e}"
 
 if __name__ == "__main__":
     app.run(debug=True)
