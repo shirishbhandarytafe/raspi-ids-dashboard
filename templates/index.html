@@ -1,30 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Raspberry Pi IDS Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raspberry Pi IDS Dashboard</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    header {
+      background: #212529;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      border-radius: 0 0 10px 10px;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .table thead {
+      background-color: #343a40;
+      color: white;
+    }
+    .normal-row {
+      background-color: #d4edda !important; /* green */
+    }
+    .anomaly-row {
+      background-color: #f8d7da !important; /* red */
+    }
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    img.dashboard-img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
-<body class="bg-light">
-<div class="container py-4">
-    <h1 class="mb-4">Raspberry Pi IDS Dashboard</h1>
-    <p>Showing last 10 log files</p>
+<body>
+  <header>
+    <h1>🔒 Raspberry Pi IDS Dashboard</h1>
+    <p>Monitoring anomalies in real-time</p>
+  </header>
 
-    {% if log_files %}
-        <ul class="list-group mb-4">
-        {% for file in log_files %}
-            <li class="list-group-item">{{ file }}</li>
-        {% endfor %}
-        </ul>
+  <main class="container my-4">
+    <!-- IDS Image -->
+    <div class="row mb-4">
+      <div class="col text-center">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Intrusion_Detection_System_illustration.png/640px-Intrusion_Detection_System_illustration.png" 
+             alt="IDS illustration" class="dashboard-img shadow">
+      </div>
+    </div>
 
-        {% for log in logs_data %}
-            <h4>{{ log.name }}</h4>
-            <div class="table-responsive mb-5">
-                {{ log.table | safe }}
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-danger">⚠️ No log files found.</p>
-    {% endif %}
-</div>
+    <!-- Status Card -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card p-3">
+          <h4 class="mb-3">📊 Recent Log Analysis</h4>
+          <p>Showing last <strong>10 log files</strong> retrieved from Azure Blob Storage.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Table -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-3">
+          <h4 class="mb-3">🚨 Alerts</h4>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Source IP</th>
+                  <th>Destination IP</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in logs %}
+                  <tr class="{% if log['ML Label'] == 'Anomaly' %}anomaly-row{% else %}normal-row{% endif %}">
+                    <td>{{ log['Time'] }}</td>
+                    <td>{{ log['Source IP'] }}</td>
+                    <td>{{ log['Dest IP'] }}</td>
+                    <td>{{ log['ML Label'] }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="footer">
+    Raspberry Pi IDS &copy; 2025 | Powered by Azure & Flask
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
