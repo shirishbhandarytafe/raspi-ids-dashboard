@@ -9,7 +9,7 @@ app = Flask(__name__)
 # ================= CONFIG =================
 # Must set this environment variable on the system:
 # export AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
-CONN_STR = os.environ.get("")
+CONN_STR = os.environ.get("AZURE_STORAGE_CONNECTION_STRING")
 if not CONN_STR:
     raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set")
 
