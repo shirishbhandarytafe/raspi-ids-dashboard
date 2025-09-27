@@ -1,58 +1,56 @@
 from flask import Flask, render_template
-from azure.storage.blob import ContainerClient
+from azure.storage.blob import BlobServiceClient
 import pandas as pd
-from io import StringIO
+from io import BytesIO
 import os
 
 app = Flask(__name__)
 
 # ================= CONFIG =================
-ACCOUNT_NAME = "idslogsstoregroup1"  # updated storage account
-CONTAINER = "idslogs"                # container name
-SAS_TOKEN = os.environ.get("SAS_TOKEN")  # must be set in Azure App Settings
-# ==========================================
+CONTAINER = "idslogsgroup1"  # Replace with your new container name
+SAS_TOKEN = os.environ.get("SAS_TOKEN")
+STORAGE_ACCOUNT = "idslogsstoregroup1"  # Replace with your storage account name
 
 if not SAS_TOKEN:
-    print("⚠️ Warning: SAS_TOKEN is not set. Add it in App Settings.")
-else:
-    print(f"Using SAS token: {SAS_TOKEN[:20]}...")  # just first 20 chars
+    print("⚠️ SAS_TOKEN environment variable not set. Logs will not be displayed.")
 
-def fetch_logs():
-    logs = []
-    if not SAS_TOKEN:
-        print("❌ SAS token missing, cannot fetch logs.")
-        return logs
-
-    try:
-        container_url = f"https://{ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER}?{SAS_TOKEN}"
-        container_client = ContainerClient.from_container_url(container_url)
-
-        blob_list = sorted(
-            container_client.list_blobs(),
-            key=lambda b: b.last_modified,
-            reverse=True
-        )
-        print(f"Found {len(blob_list)} blobs in container '{CONTAINER}'.")
-
-        last_files = blob_list[:10]  # last 10 files
-        for blob in last_files:
-            print(f"Downloading blob: {blob.name}")
-            blob_data = container_client.download_blob(blob.name).content_as_text()
-            try:
-                df = pd.read_csv(StringIO(blob_data))
-                logs.extend(df.to_dict(orient="records"))
-            except Exception as e:
-                print(f"❌ Failed to parse CSV {blob.name}: {e}")
-
-    except Exception as e:
-        print(f"❌ Error fetching logs: {e}")
-
-    return logs
+# Build blob service client
+blob_service_client = None
+if SAS_TOKEN:
+    blob_service_client = BlobServiceClient(
+        account_url=f"https://{STORAGE_ACCOUNT}.blob.core.windows.net",
+        credential=SAS_TOKEN
+    )
 
 @app.route("/")
 def index():
-    logs = fetch_logs()
+    logs = []
+    if blob_service_client:
+        try:
+            container_client = blob_service_client.get_container_client(CONTAINER)
+            blobs = list(container_client.list_blobs())
+            blobs.sort(key=lambda x: x.name, reverse=True)  # latest first
+            for b in blobs[:10]:  # last 10 logs
+                blob_data = container_client.download_blob(b.name).readall()
+                try:
+                    df = pd.read_csv(BytesIO(blob_data))
+                    logs.append({
+                        "filename": b.name,
+                        "rows": df.to_dict(orient="records"),
+                        "size": len(blob_data)
+                    })
+                except Exception as e:
+                    logs.append({
+                        "filename": b.name,
+                        "rows": [],
+                        "size": len(blob_data),
+                        "error": str(e)
+                    })
+        except Exception as e:
+            print(f"Error accessing container: {e}")
+
     return render_template("index.html", logs=logs)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
