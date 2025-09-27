@@ -1,31 +1,35 @@
 trigger:
-- main
+  - main  # Trigger pipeline on commits to main branch
 
 pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  AZURE_WEBAPP_NAME: 'Group1tafe'
-  AZURE_RESOURCE_GROUP: 'Group1tafe_group-bd41'
-  PYTHON_VERSION: '3.11'
+  AZURE_WEBAPP_NAME: 'Group1tafe'                # Your Azure Web App name
+  AZURE_RESOURCE_GROUP: 'Group1tafe_group-bd41' # Your Resource Group
+  PYTHON_VERSION: '3.11'                        # Python version for your app
 
 steps:
+
+# ---------------- Install Python ----------------
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '$(PYTHON_VERSION)'
     addToPath: true
 
+# ---------------- Install dependencies ----------------
 - script: |
     python -m venv venv
     source venv/bin/activate
     pip install --upgrade pip
     pip install -r requirements.txt
-  displayName: 'Install dependencies'
+  displayName: 'Install Python dependencies'
 
+# ---------------- Deploy to Azure Web App ----------------
 - task: AzureWebApp@1
   inputs:
-    azureSubscription: 'Visual Studio Enterprise Subscription – MPN'
+    azureSubscription: 'shirishbhandarytafe'   # Replace with your service connection name
     appType: 'webAppLinux'
     appName: '$(AZURE_WEBAPP_NAME)'
     package: '$(System.DefaultWorkingDirectory)'
-
+    startupCommand: 'python3 app.py'
