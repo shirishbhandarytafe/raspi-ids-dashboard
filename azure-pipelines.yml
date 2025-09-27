@@ -1,0 +1,31 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  AZURE_WEBAPP_NAME: 'Group1tafe'
+  AZURE_RESOURCE_GROUP: 'Group1tafe_group-bd41'
+  PYTHON_VERSION: '3.11'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(PYTHON_VERSION)'
+    addToPath: true
+
+- script: |
+    python -m venv venv
+    source venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements.txt
+  displayName: 'Install dependencies'
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'Visual Studio Enterprise Subscription – MPN'
+    appType: 'webAppLinux'
+    appName: '$(AZURE_WEBAPP_NAME)'
+    package: '$(System.DefaultWorkingDirectory)'
+
