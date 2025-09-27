@@ -1,57 +1,52 @@
 from flask import Flask, render_template
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import ContainerClient
 import pandas as pd
-import os
 from io import StringIO
+import os
 
 app = Flask(__name__)
 
-# ============== CONFIG ===================
-ACCOUNT_URL = "https://idslogsstore123.blob.core.windows.net"
-CONTAINER_NAME = "idslogs"
-SAS_TOKEN = os.environ.get("AZURE_STORAGE_SAS_URL")
-# =========================================
+# ========== CONFIG ==========
+ACCOUNT_NAME = "idslogsstore123"   # your storage account name
+CONTAINER = "idslogs"
 
-# Safe check
+# SAS token (set this as environment variable in Azure App Settings)
+SAS_TOKEN = os.environ.get("AZURE_STORAGE_SAS_TOKEN")
+
 if not SAS_TOKEN:
-    print("⚠️ Warning: SAS token not set. The app will run, but no logs can be loaded.")
-    blob_service_client = None
-    container_client = None
-else:
-    blob_service_client = BlobServiceClient(account_url=ACCOUNT_URL, credential=SAS_TOKEN)
-    container_client = blob_service_client.get_container_client(CONTAINER_NAME)
+    print("⚠️ Warning: SAS token not found. Set AZURE_STORAGE_SAS_TOKEN in App Settings.")
+# ============================
 
 
 @app.route("/")
 def index():
-    log_files = []
-    logs_data = []
+    logs = []
 
-    if container_client:
-        # List all blobs and sort by last modified
-        blobs = list(container_client.list_blobs())
-        blobs = sorted(blobs, key=lambda b: b.last_modified, reverse=True)
+    try:
+        if not SAS_TOKEN:
+            return render_template("index.html", logs=logs)
 
-        # Get up to last 10 CSV logs
-        for blob in blobs[:10]:
-            if blob.name.endswith(".csv"):
-                log_files.append(blob.name)
+        # Build container client using SAS
+        container_url = f"https://{ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER}?{SAS_TOKEN}"
+        container_client = ContainerClient.from_container_url(container_url)
 
-                # Download blob content
-                blob_data = container_client.download_blob(blob.name).readall()
-                try:
-                    df = pd.read_csv(StringIO(blob_data.decode("utf-8")))
-                    logs_data.append({
-                        "name": blob.name,
-                        "table": df.to_html(classes="table table-striped table-bordered", index=False)
-                    })
-                except Exception as e:
-                    logs_data.append({
-                        "name": blob.name,
-                        "table": f"<p>Error reading CSV: {e}</p>"
-                    })
+        # Get last 10 blobs (sorted by name/time)
+        blob_list = sorted(
+            container_client.list_blobs(),
+            key=lambda b: b.name,
+            reverse=True
+        )[:10]
 
-    return render_template("index.html", log_files=log_files, logs_data=logs_data)
+        # Parse each CSV blob into log records
+        for blob in blob_list:
+            blob_data = container_client.download_blob(blob.name).content_as_text()
+            df = pd.read_csv(StringIO(blob_data))
+            logs.extend(df.to_dict(orient="records"))
+
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+    return render_template("index.html", logs=logs)
 
 
 if __name__ == "__main__":
