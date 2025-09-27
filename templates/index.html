@@ -3,56 +3,15 @@
 <head>
   <title>Raspberry Pi IDS Dashboard</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
-    }
-    h1 {
-      color: #2c3e50;
-      text-align: center;
-    }
-    .message {
-      text-align: center;
-      color: red;
-      font-weight: bold;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      background: white;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background: #34495e;
-      color: white;
-    }
-    tr.normal {
-      background: #eafaf1;
-      color: #2e7d32;
-    }
-    tr.anomaly {
-      background: #fdecea;
-      color: #c62828;
-      font-weight: bold;
-    }
-    .footer {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 0.9em;
-      color: #777;
-    }
-    img {
-      display: block;
-      margin: 20px auto;
-      max-width: 300px;
-    }
+    body { font-family: Arial; margin: 20px; background: #f9f9f9; }
+    h1 { text-align:center; color:#2c3e50; }
+    table { width:100%; border-collapse: collapse; margin-top:20px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+    th, td { border:1px solid #ddd; padding:10px; text-align:center; }
+    th { background:#34495e; color:white; }
+    tr.normal { background:#eafaf1; color:#2e7d32; }
+    tr.anomaly { background:#fdecea; color:#c62828; font-weight:bold; }
+    .footer { margin-top:20px; text-align:center; font-size:0.9em; color:#777; }
+    img { display:block; margin:20px auto; max-width:300px; }
   </style>
   <meta http-equiv="refresh" content="30">
 </head>
@@ -60,17 +19,17 @@
   <h1>🔐 Raspberry Pi IDS Dashboard</h1>
   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Raspberry_Pi_Logo.svg/512px-Raspberry_Pi_Logo.svg.png" alt="Raspberry Pi Logo">
 
-  {% if message %}
-    <p class="message">{{ message }}</p>
+  {% if logs|length == 0 %}
+    <p style="text-align:center; color:red;">No logs found</p>
   {% else %}
     <table>
       <tr>
-        {% for key in tables[0].keys() %}
+        {% for key in logs[0].keys() %}
           <th>{{ key }}</th>
         {% endfor %}
       </tr>
-      {% for row in tables[0] %}
-        <tr class="{{ 'anomaly' if row['ML Label'] == 'Anomaly' else 'normal' }}">
+      {% for row in logs %}
+        <tr class="{{ 'anomaly' if row['ML Label']=='Anomaly' else 'normal' }}">
           {% for val in row.values() %}
             <td>{{ val }}</td>
           {% endfor %}
@@ -78,9 +37,6 @@
       {% endfor %}
     </table>
   {% endif %}
-
-  <div class="footer">
-    Auto-refreshes every 30 seconds
-  </div>
+  <div class="footer">Auto-refresh every 30 seconds | Powered by Azure & Flask</div>
 </body>
 </html>
