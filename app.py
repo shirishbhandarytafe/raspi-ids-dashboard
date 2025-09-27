@@ -23,32 +23,36 @@ else:
     blob_available = False
 # =========================================
 
-def read_last_log():
-    """Fetch the most recent CSV log from Azure Blob Storage"""
+def read_last_logs(n=10):
+    """Fetch the last n CSV logs from Azure Blob Storage"""
     if not blob_available:
-        return pd.DataFrame()  # Empty DataFrame if blob storage not accessible
+        return []
 
     blobs = list(container_client.list_blobs())
     if not blobs:
-        return pd.DataFrame()  # No files found
+        return []
 
     # Sort blobs by last modified date descending
     blobs.sort(key=lambda b: b.last_modified, reverse=True)
-    last_blob = blobs[0]
+    last_blobs = blobs[:n]
 
-    # Download blob content
-    blob_data = container_client.download_blob(last_blob.name).readall()
-    df = pd.read_csv(BytesIO(blob_data))
-    return df
+    all_logs = []
+    for b in last_blobs:
+        try:
+            data = container_client.download_blob(b.name).readall()
+            df = pd.read_csv(BytesIO(data))
+            df['LogFile'] = b.name  # Add filename column
+            all_logs.append(df)
+        except Exception as e:
+            print(f"Error reading {b.name}: {e}")
+
+    if all_logs:
+        return pd.concat(all_logs, ignore_index=True).to_dict(orient="records")
+    return []
 
 @app.route("/")
 def index():
-    try:
-        df = read_last_log()
-        logs = df.to_dict(orient="records")
-    except Exception as e:
-        logs = []
-        print(f"Error reading blob: {e}")
+    logs = read_last_logs(10)
     return render_template("index.html", logs=logs)
 
 @app.route("/env")
