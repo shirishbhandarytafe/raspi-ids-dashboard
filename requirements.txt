@@ -1,4 +1,4 @@
-Flask
-pandas
-azure-identity
-azure-storage-blob
+Flask==3.0.3
+azure-storage-blob==12.19.1
+pandas==2.2.2
+
