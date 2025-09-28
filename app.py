@@ -1,20 +1,21 @@
 from flask import Flask, render_template
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 import pandas as pd
 from io import BytesIO
-import os
 
 app = Flask(__name__)
 
 # ================= CONFIG =================
-CONTAINER_NAME = "idslog"  # Your container
-CONNECTION_STRING = os.environ.get("CONNECTION_STRING")
+STORAGE_ACCOUNT = "idslogsstoregroup1"
+CONTAINER_NAME = "idslog"
 
-if not CONNECTION_STRING:
-    raise RuntimeError("⚠️ CONNECTION_STRING environment variable not set.")
-
-# Build BlobServiceClient
-blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING)
+# Managed Identity credential
+credential = DefaultAzureCredential()
+blob_service_client = BlobServiceClient(
+    account_url=f"https://{STORAGE_ACCOUNT}.blob.core.windows.net",
+    credential=credential
+)
 
 @app.route("/")
 def index():
@@ -41,21 +42,10 @@ def index():
                     "error": str(e)
                 })
     except Exception as e:
-        print(f"Error accessing container: {e}")
+        logs.append({"error": f"Error accessing container: {e}"})
 
     return render_template("index.html", logs=logs)
-
-# Optional route to test connection
-@app.route("/check-connection")
-def check_connection():
-    try:
-        container_client = blob_service_client.get_container_client(CONTAINER_NAME)
-        count = len(list(container_client.list_blobs()))
-        return f"✅ Connection successful! {count} blobs found."
-    except Exception as e:
-        return f"❌ Connection failed: {e}"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
-
