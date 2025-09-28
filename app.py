@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # ================= CONFIG =================
-CONTAINER = "idslogsgroup1"  # Replace with your new container name
+CONTAINER = "idslog"  # Replace with your new container name
 SAS_TOKEN = os.environ.get("SAS_TOKEN")
 STORAGE_ACCOUNT = "idslogsstoregroup1"  # Replace with your storage account name
 
