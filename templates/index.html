@@ -1,49 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Raspberry Pi IDS Dashboard</title>
-    <meta http-equiv="refresh" content="30">
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border: 1px solid #ddd; padding: 8px; }
-      th { background-color: #f2f2f2; }
-      .error { color: red; }
-    </style>
-  </head>
-  <body>
-    <h2>🔐 Raspberry Pi IDS Dashboard</h2>
-    {% if logs %}
-      {% for log in logs %}
-        <h3>{{ log.filename }} ({{ log.size }} bytes)</h3>
-        {% if log.error %}
-          <p class="error">Error reading file: {{ log.error }}</p>
-        {% else %}
-          <table>
-            <thead>
-              <tr>
-                {% for key in log.rows[0].keys() %}
-                  <th>{{ key }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in log.rows %}
-                <tr>
-                  {% for value in row.values() %}
-                    <td>{{ value }}</td>
-                  {% endfor %}
-                </tr>
+<head>
+  <meta charset="utf-8">
+  <title>Raspberry Pi IDS Dashboard</title>
+</head>
+<body>
+  <h1>🔐 Raspberry Pi IDS Dashboard</h1>
+  {% if logs %}
+    {% for log in logs %}
+      <h3>{{ log.filename }} ({{ log.size }} bytes)</h3>
+      {% if log.rows %}
+        <table border="1">
+          <tr>
+            {% for col in log.rows[0].keys() %}
+              <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+          {% for row in log.rows %}
+            <tr>
+              {% for value in row.values() %}
+                <td>{{ value }}</td>
               {% endfor %}
-            </tbody>
-          </table>
-        {% endif %}
-      {% endfor %}
-    {% else %}
-      <p>No logs found</p>
-    {% endif %}
-    <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
-  </body>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>No rows or error: {{ log.error }}</p>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>No logs found</p>
+  {% endif %}
+  <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
+</body>
 </html>
-
