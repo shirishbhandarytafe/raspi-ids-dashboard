@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # Fetch connection string from environment variables
 CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-CONTAINER_NAME = "<YourContainerName>"  # Replace with your container name
+CONTAINER_NAME = "idslog"  # The container storing the log files
 
 if not CONNECTION_STRING:
     raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
