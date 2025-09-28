@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify
 from azure.storage.blob import BlobServiceClient
 import os
+import logging
 
 app = Flask(__name__)
 
@@ -8,12 +9,27 @@ app = Flask(__name__)
 CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 CONTAINER_NAME = "idslog"  # The container storing the log files
 
+# Check if the connection string is set
 if not CONNECTION_STRING:
     raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
 
 # Initialize BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING)
 container_client = blob_service_client.get_container_client(CONTAINER_NAME)
+
+# Define a safe directory for logs
+LOG_DIRECTORY = '/home/site/wwwroot/logs/'
+
+# Create the logs directory if it doesn't exist
+if not os.path.exists(LOG_DIRECTORY):
+    os.makedirs(LOG_DIRECTORY)
+
+# Configure logging
+logging.basicConfig(
+    filename=os.path.join(LOG_DIRECTORY, 'app.log'),
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 @app.route('/')
 def index():
@@ -34,9 +50,14 @@ def index():
             content = download_stream.readall().decode('utf-8')  # Decode bytes to string
             log_contents[log] = content
 
+        # Log successful retrieval
+        logging.info("Successfully retrieved log files from Azure Blob Storage.")
+
         return render_template('index.html', logs=log_contents)
 
     except Exception as e:
+        # Log the error
+        logging.error(f"Error occurred: {str(e)}")
         return render_template('index.html', logs=None, error=str(e))
 
 if __name__ == '__main__':
