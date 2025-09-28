@@ -1,53 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>🔐 Raspberry Pi IDS Dashboard</title>
+    <title>Raspberry Pi IDS Dashboard Group 1</title>
+    <meta http-equiv="refresh" content="30">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th { background-color: #4CAF50; color: white; }
         .anomaly { color: red; font-weight: bold; }
         .normal { color: green; }
     </style>
 </head>
 <body>
-    <h1>🔐 Raspberry Pi IDS Dashboard</h1>
-    {% if logs %}
-        {% for log in logs %}
-            <h2>{{ log.filename }} ({{ log.size }} bytes)</h2>
-            {% if log.error %}
-                <p style="color:red;">Error parsing CSV: {{ log.error }}</p>
-            {% else %}
-                <table>
-                    <tr>
-                        {% for col in log.rows[0].keys() %}
-                            <th>{{ col }}</th>
-                        {% endfor %}
-                    </tr>
-                    {% for row in log.rows %}
-                        <tr>
-                            {% for key, value in row.items() %}
-                                {% if value|string|lower == "anomaly" %}
-                                    <td class="anomaly">{{ value }}</td>
-                                {% elif value|string|lower == "normal" %}
-                                    <td class="normal">{{ value }}</td>
-                                {% else %}
-                                    <td>{{ value }}</td>
-                                {% endif %}
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% endif %}
+<h2>🔐 Raspberry Pi IDS Dashboard</h2>
+{% for log in logs %}
+<h4>{{ log.filename }}</h4>
+<table>
+    <tr>
+        {% if log.rows|length > 0 %}
+            {% for key in log.rows[0].keys() %}
+            <th>{{ key }}</th>
+            {% endfor %}
+        {% endif %}
+    </tr>
+    {% for row in log.rows %}
+    <tr>
+        {% for val in row.values() %}
+        <td class="{{ 'anomaly' if 'anomaly' in str(val).lower() else 'normal' }}">{{ val }}</td>
         {% endfor %}
-    {% else %}
-        <p>No logs found</p>
-    {% endif %}
-    <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
-    <script>
-        setTimeout(() => { location.reload(); }, 30000); // Refresh every 30s
-    </script>
+    </tr>
+    {% endfor %}
+</table>
+{% endfor %}
+<p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
 </body>
 </html>
