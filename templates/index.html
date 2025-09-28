@@ -3,103 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔐 Raspberry Pi IDS Dashboard</title>
+    <title>Azure Log Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
+            margin: 20px;
+            background-color: #f4f4f9;
         }
-        header {
-            background-color: #1e3d58;
-            color: white;
-            padding: 20px;
+        h1 {
             text-align: center;
+            color: #333;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .log-container {
             margin: 20px 0;
-            border: 1px solid #ddd;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        table th, table td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #ddd;
+        .log-container h3 {
+            margin-top: 0;
         }
-        th {
-            background-color: #f2f2f2;
+        .log-content {
+            white-space: pre-wrap; 
+            word-wrap: break-word;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-y: scroll;
+            max-height: 400px;
         }
         .error {
             color: red;
-            font-weight: bold;
-        }
-        footer {
             text-align: center;
-            padding: 10px;
-            background-color: #1e3d58;
-            color: white;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>🔐 Raspberry Pi IDS Dashboard</h1>
-    </header>
+    <h1>Azure Log Dashboard</h1>
 
-    <main>
-        <div>
-            <h2>Latest Logs</h2>
-            {% if logs %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Filename</th>
-                            <th>Size (Bytes)</th>
-                            <th>Log Entries</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in logs %}
-                            <tr>
-                                <td>{{ log.filename }}</td>
-                                <td>{{ log.size }}</td>
-                                <td>
-                                    {% if log.rows %}
-                                        <table style="width:100%; border: 1px solid #ddd;">
-                                            <tr>
-                                                <th>Source IP</th>
-                                                <th>Destination IP</th>
-                                                <th>Label</th>
-                                            </tr>
-                                            {% for row in log.rows %}
-                                                <tr>
-                                                    <td>{{ row['Src IP'] }}</td>
-                                                    <td>{{ row['Dst IP'] }}</td>
-                                                    <td>{{ row['ML Label'] }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </table>
-                                    {% else %}
-                                        <p class="error">No data available or error parsing log.</p>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>No logs found or unable to fetch logs.</p>
-            {% endif %}
-        </div>
-    </main>
-
-    <footer>
-        <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
-    </footer>
+    {% if logs %}
+        {% for log_name, content in logs.items() %}
+            <div class="log-container">
+                <h3>{{ log_name }}</h3>
+                <div class="log-content">
+                    {{ content }}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="error">No logs found in storage or there was an error fetching the logs.</p>
+    {% endif %}
 </body>
 </html>
