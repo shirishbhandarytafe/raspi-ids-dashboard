@@ -1,47 +1,37 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template
 from azure.storage.blob import BlobServiceClient
-import pandas as pd
-from io import BytesIO
 import os
 
 app = Flask(__name__)
 
-CONTAINER = "idslog"
-STORAGE_ACCOUNT = "idslogsstoregroup1"
-SAS_TOKEN = os.environ.get("SAS_TOKEN")
+# Read connection string from environment variable
+CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+CONTAINER_NAME = "<YourContainerName>"  # Replace with your container name
 
-if not SAS_TOKEN:
-    raise RuntimeError("⚠️ SAS_TOKEN environment variable not set.")
+# Initialize BlobServiceClient
+blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING)
+container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 
-print("Using SAS token:", SAS_TOKEN)
-
-blob_service_client = BlobServiceClient(
-    account_url=f"https://{STORAGE_ACCOUNT}.blob.core.windows.net",
-    credential=SAS_TOKEN
-)
-
-@app.route("/")
-def index():
+# Route to fetch logs from Azure Blob Storage
+@app.route('/logs')
+def get_logs():
     logs = []
     try:
-        container_client = blob_service_client.get_container_client(CONTAINER)
-        blobs = list(container_client.list_blobs())
-        blobs.sort(key=lambda x: x.name, reverse=True)
-        for b in blobs[:10]:
-            blob_data = container_client.download_blob(b.name).readall()
-            try:
-                df = pd.read_csv(BytesIO(blob_data))
-                logs.append({
-                    "filename": b.name,
-                    "rows": df.to_dict(orient="records"),
-                    "size": len(blob_data)
-                })
-            except Exception as e:
-                logs.append({"filename": b.name, "rows": [], "size": len(blob_data), "error": str(e)})
+        # List blobs in the container
+        for blob in container_client.list_blobs():
+            blob_client = container_client.get_blob_client(blob.name)
+            download_stream = blob_client.download_blob()
+            content = download_stream.readall().decode('utf-8')  # Decode to string
+            logs.append({'name': blob.name, 'content': content})
     except Exception as e:
-        print(f"Error accessing container: {e}")
-    return render_template("index.html", logs=logs)
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    return jsonify(logs)
+
+# Route to serve the HTML file (Dashboard)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
