@@ -7,9 +7,9 @@ import os
 app = Flask(__name__)
 
 # ================= CONFIG =================
-CONTAINER = "idslog"  # Your container name
+CONTAINER = "idslog"  # Container name
 SAS_TOKEN = os.environ.get("SAS_TOKEN")
-STORAGE_ACCOUNT = "idslogsstoregroup1"  # Your storage account
+STORAGE_ACCOUNT = "idslogsstoregroup1"  # Storage account name
 
 if not SAS_TOKEN:
     print("⚠️ SAS_TOKEN environment variable not set. Logs will not be displayed.")
@@ -30,7 +30,7 @@ def index():
         try:
             container_client = blob_service_client.get_container_client(CONTAINER)
             blobs = list(container_client.list_blobs())
-            # Filter to only include CSVs in 'logfiles/' folder
+            # Filter CSVs in 'logfiles/' folder
             blobs = [b for b in blobs if b.name.startswith("logfiles/") and b.name.endswith(".csv")]
             blobs.sort(key=lambda x: x.name, reverse=True)  # latest first
 
@@ -59,6 +59,7 @@ def index():
                     })
         except Exception as e:
             print(f"Error accessing container: {e}")
+
     return render_template("index.html", logs=logs)
 
 # Temporary route to test SAS token and list blobs
