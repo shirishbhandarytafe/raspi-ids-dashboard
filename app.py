@@ -1,37 +1,43 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, render_template, jsonify
 from azure.storage.blob import BlobServiceClient
 import os
 
 app = Flask(__name__)
 
-# Read connection string from environment variable
+# Fetch connection string from environment variables
 CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 CONTAINER_NAME = "<YourContainerName>"  # Replace with your container name
+
+if not CONNECTION_STRING:
+    raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
 
 # Initialize BlobServiceClient
 blob_service_client = BlobServiceClient.from_connection_string(CONNECTION_STRING)
 container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 
-# Route to fetch logs from Azure Blob Storage
-@app.route('/logs')
-def get_logs():
-    logs = []
-    try:
-        # List blobs in the container
-        for blob in container_client.list_blobs():
-            blob_client = container_client.get_blob_client(blob.name)
-            download_stream = blob_client.download_blob()
-            content = download_stream.readall().decode('utf-8')  # Decode to string
-            logs.append({'name': blob.name, 'content': content})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    return jsonify(logs)
-
-# Route to serve the HTML file (Dashboard)
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        logs = []
+        # List blobs (log files) in the container
+        for blob in container_client.list_blobs():
+            logs.append(blob.name)
+
+        if not logs:
+            return render_template('index.html', logs=None)
+
+        # Fetch the content of each log file
+        log_contents = {}
+        for log in logs:
+            blob_client = container_client.get_blob_client(log)
+            download_stream = blob_client.download_blob()
+            content = download_stream.readall().decode('utf-8')  # Decode bytes to string
+            log_contents[log] = content
+
+        return render_template('index.html', logs=log_contents)
+
+    except Exception as e:
+        return render_template('index.html', logs=None, error=str(e))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
