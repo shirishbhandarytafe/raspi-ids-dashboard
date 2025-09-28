@@ -1,42 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Raspberry Pi IDS Dashboard</title>
-  <style>
-    body { font-family: Arial; margin: 20px; background: #f9f9f9; }
-    h1 { text-align:center; color:#2c3e50; }
-    table { width:100%; border-collapse: collapse; margin-top:20px; background:white; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
-    th, td { border:1px solid #ddd; padding:10px; text-align:center; }
-    th { background:#34495e; color:white; }
-    tr.normal { background:#eafaf1; color:#2e7d32; }
-    tr.anomaly { background:#fdecea; color:#c62828; font-weight:bold; }
-    .footer { margin-top:20px; text-align:center; font-size:0.9em; color:#777; }
-    img { display:block; margin:20px auto; max-width:300px; }
-  </style>
-  <meta http-equiv="refresh" content="30">
+    <meta charset="UTF-8">
+    <title>🔐 Raspberry Pi IDS Dashboard Group 1</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .anomaly { color: red; font-weight: bold; }
+        .normal { color: green; }
+    </style>
 </head>
 <body>
-  <h1>🔐 Raspberry Pi IDS Dashboard</h1>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Raspberry_Pi_Logo.svg/512px-Raspberry_Pi_Logo.svg.png" alt="Raspberry Pi Logo">
-
-  {% if logs|length == 0 %}
-    <p style="text-align:center; color:red;">No logs found</p>
-  {% else %}
-    <table>
-      <tr>
-        {% for key in logs[0].keys() %}
-          <th>{{ key }}</th>
+    <h1>🔐 Raspberry Pi IDS Dashboard</h1>
+    {% if logs %}
+        {% for log in logs %}
+            <h2>{{ log.filename }} ({{ log.size }} bytes)</h2>
+            {% if log.error %}
+                <p style="color:red;">Error parsing CSV: {{ log.error }}</p>
+            {% else %}
+                <table>
+                    <tr>
+                        {% for col in log.rows[0].keys() %}
+                            <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for row in log.rows %}
+                        <tr>
+                            {% for key, value in row.items() %}
+                                {% if value|string|lower == "anomaly" %}
+                                    <td class="anomaly">{{ value }}</td>
+                                {% elif value|string|lower == "normal" %}
+                                    <td class="normal">{{ value }}</td>
+                                {% else %}
+                                    <td>{{ value }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
         {% endfor %}
-      </tr>
-      {% for row in logs %}
-        <tr class="{{ 'anomaly' if row['ML Label']=='Anomaly' else 'normal' }}">
-          {% for val in row.values() %}
-            <td>{{ val }}</td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
-  <div class="footer">Auto-refresh every 30 seconds | Powered by Azure & Flask</div>
+    {% else %}
+        <p>No logs found</p>
+    {% endif %}
+    <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
+    <script>
+        setTimeout(() => { location.reload(); }, 30000); // Refresh every 30s
+    </script>
 </body>
 </html>
