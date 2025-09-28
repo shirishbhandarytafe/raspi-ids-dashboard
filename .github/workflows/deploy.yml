@@ -1,0 +1,36 @@
+name: Deploy Flask App to Azure App Service
+
+on:
+  push:
+    branches:
+      - main  # Deploy when code is pushed to main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # Step 2: Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'  # Use the Python version of your app
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Deploy to Azure
+      - name: Deploy to Azure Web App
+        uses: Azure/webapps-deploy@v2
+        with:
+          app-name: idsgroup1-28  # Replace with your Azure App Service name
+          publish-profile: |
+            <publishData><publishProfile profileName="idsgroup1-28 - Web Deploy" publishMethod="MSDeploy" publishUrl="idsgroup1-28-htcmfefzfwb0c3fn.scm.australiasoutheast-01.azurewebsites.net:443" msdeploySite="idsgroup1-28" userName="$idsgroup1-28" userPWD="iQgKtuhcrGnqqXZgywDGwJb8LC0l7bC1YbkKtJCWxqxmzlZp7CbbTmBj8pxf" destinationAppUrl="https://idsgroup1-28-htcmfefzfwb0c3fn.australiasoutheast-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="idsgroup1-28 - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-ml1-031.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="idsgroup1-28\$idsgroup1-28" userPWD="iQgKtuhcrGnqqXZgywDGwJb8LC0l7bC1YbkKtJCWxqxmzlZp7CbbTmBj8pxf" destinationAppUrl="https://idsgroup1-28-htcmfefzfwb0c3fn.australiasoutheast-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="idsgroup1-28 - Zip Deploy" publishMethod="ZipDeploy" publishUrl="idsgroup1-28-htcmfefzfwb0c3fn.scm.australiasoutheast-01.azurewebsites.net:443" userName="$idsgroup1-28" userPWD="iQgKtuhcrGnqqXZgywDGwJb8LC0l7bC1YbkKtJCWxqxmzlZp7CbbTmBj8pxf" destinationAppUrl="https://idsgroup1-28-htcmfefzfwb0c3fn.australiasoutheast-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>
+          package: '.'
