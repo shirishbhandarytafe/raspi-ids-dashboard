@@ -1,36 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Raspberry Pi IDS Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Raspberry Pi IDS Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1e3d58;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #1e3d58;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-  <h1>🔐 Raspberry Pi IDS Dashboard</h1>
-  {% if logs %}
-    {% for log in logs %}
-      <h3>{{ log.filename }} ({{ log.size }} bytes)</h3>
-      {% if log.rows %}
-        <table border="1">
-          <tr>
-            {% for col in log.rows[0].keys() %}
-              <th>{{ col }}</th>
-            {% endfor %}
-          </tr>
-          {% for row in log.rows %}
-            <tr>
-              {% for value in row.values() %}
-                <td>{{ value }}</td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        </table>
-      {% else %}
-        <p>No rows or error: {{ log.error }}</p>
-      {% endif %}
-    {% endfor %}
-  {% else %}
-    <p>No logs found</p>
-  {% endif %}
-  <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
+    <header>
+        <h1>🔐 Raspberry Pi IDS Dashboard</h1>
+    </header>
+
+    <main>
+        <div>
+            <h2>Latest Logs</h2>
+            {% if logs %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Size (Bytes)</th>
+                            <th>Log Entries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                            <tr>
+                                <td>{{ log.filename }}</td>
+                                <td>{{ log.size }}</td>
+                                <td>
+                                    {% if log.rows %}
+                                        <table style="width:100%; border: 1px solid #ddd;">
+                                            <tr>
+                                                <th>Source IP</th>
+                                                <th>Destination IP</th>
+                                                <th>Label</th>
+                                            </tr>
+                                            {% for row in log.rows %}
+                                                <tr>
+                                                    <td>{{ row['Src IP'] }}</td>
+                                                    <td>{{ row['Dst IP'] }}</td>
+                                                    <td>{{ row['ML Label'] }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                    {% else %}
+                                        <p class="error">No data available or error parsing log.</p>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No logs found or unable to fetch logs.</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <footer>
+        <p>Auto-refresh every 30 seconds | Powered by Azure & Flask</p>
+    </footer>
 </body>
 </html>
